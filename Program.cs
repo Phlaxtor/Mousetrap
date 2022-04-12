@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Drawing;
 
 TimeSpan period = TimeSpan.FromSeconds(5);
 using PeriodicTimer timer = new PeriodicTimer(period);
@@ -9,7 +10,6 @@ static extern bool GetCursorPos(out POINT lpPoint);
 
 [DllImport("user32.dll")]
 static extern bool SetCursorPos(int X, int Y);
-
 
 while (true)
 {
@@ -38,17 +38,10 @@ public struct POINT
 
     public POINT(int x, int y)
     {
-        this.X = x;
-        this.Y = y;
+        X = x;
+        Y = y;
     }
 
-    public static implicit operator System.Drawing.Point(POINT p)
-    {
-        return new System.Drawing.Point(p.X, p.Y);
-    }
-
-    public static implicit operator POINT(System.Drawing.Point p)
-    {
-        return new POINT(p.X, p.Y);
-    }
+    public static implicit operator Point(POINT p) => new Point(p.X, p.Y);
+    public static implicit operator POINT(Point p) => new POINT(p.X, p.Y);
 }
