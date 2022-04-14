@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mousetrap", "Mousetrap.csproj", "{E08ADEBC-0F74-4A32-80E6-CC206303C267}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mousetrap", "Mousetrap\Mousetrap.csproj", "{371C8700-969D-4DDB-BE77-26644F170C7C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E08ADEBC-0F74-4A32-80E6-CC206303C267}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E08ADEBC-0F74-4A32-80E6-CC206303C267}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E08ADEBC-0F74-4A32-80E6-CC206303C267}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E08ADEBC-0F74-4A32-80E6-CC206303C267}.Release|Any CPU.Build.0 = Release|Any CPU
+		{371C8700-969D-4DDB-BE77-26644F170C7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{371C8700-969D-4DDB-BE77-26644F170C7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{371C8700-969D-4DDB-BE77-26644F170C7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{371C8700-969D-4DDB-BE77-26644F170C7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
