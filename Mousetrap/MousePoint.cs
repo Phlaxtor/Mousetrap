@@ -13,8 +13,5 @@ namespace Mousetrap
             X = x;
             Y = y;
         }
-
-        public static implicit operator Point(MousePoint p) => new Point(p.X, p.Y);
-        public static implicit operator MousePoint(Point p) => new MousePoint(p.X, p.Y);
     }
 }

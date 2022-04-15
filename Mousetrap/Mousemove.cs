@@ -6,10 +6,10 @@ namespace Mousetrap
     {
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetCursorPos(out MousePoint lpPoint);
+        private static extern bool GetCursorPos(out MousePoint lpPoint);
 
         [DllImport("user32.dll")]
-        public static extern bool SetCursorPos(int X, int Y);
+        private static extern bool SetCursorPos(int X, int Y);
 
         public Mousemove(TimeSpan period)
         {
@@ -24,14 +24,55 @@ namespace Mousetrap
 
         public async Task Start(CancellationToken cancellation)
         {
-            if (GetCursorPos(out MousePoint p) == false) return;
-            X = p.X;
-            Y = p.Y;
+            if (SaveCurrentCursorPosition() == false) return;
+            await StartPeriodicMove(cancellation);
+        }
+
+        public Point GetCursorPosition()
+        {
+            if (TryGetCursorPosition(out int x, out int y)) return new Point(x, y);
+            throw new InvalidOperationException("Not possible to get mouse position");
+        }
+
+        private bool SaveCurrentCursorPosition()
+        {
+            if (TryGetCursorPosition(out int x, out int y) == false) return false;
+            X = x;
+            Y = y;
+            return true;
+        }
+
+        private bool TryGetCursorPosition(out int x, out int y)
+        {
+            if (GetCursorPos(out MousePoint p))
+            {
+                x = p.X;
+                y = p.Y;
+                return true;
+            }
+            x = 0;
+            y = 0;
+            return false;
+        }
+
+        private async Task StartPeriodicMove(CancellationToken cancellation)
+        {
             using var timer = new PeriodicTimer(Period);
             while (cancellation.IsCancellationRequested == false)
             {
-                await timer.WaitForNextTickAsync();
+                await WaitForNextMove(timer, cancellation);
+            }
+        }
+
+        private async Task WaitForNextMove(PeriodicTimer timer, CancellationToken cancellation)
+        {
+            try
+            {
+                await timer.WaitForNextTickAsync(cancellation);
                 await Move(cancellation);
+            }
+            catch
+            {
             }
         }
 
@@ -41,7 +82,7 @@ namespace Mousetrap
             int x = X;
             int y = Y - 1;
             SetCursorPos(x, y);
-            await Task.Delay(100);
+            await Task.Delay(50);
             SetCursorPos(X, Y);
         }
     }
