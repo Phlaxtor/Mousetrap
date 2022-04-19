@@ -3,11 +3,10 @@ namespace Mousetrap
     internal static class Program
     {
         [STAThread]
-        static void Main()
+        private static void Main()
         {
             ApplicationConfiguration.Initialize();
-            var mousepark = new Mousepark(TimeSpan.FromSeconds(15), 0.2);
-            Application.Run(mousepark);
+            Application.Run(new Mousepark(TimeSpan.FromSeconds(1), 0.2));
         }
     }
 }

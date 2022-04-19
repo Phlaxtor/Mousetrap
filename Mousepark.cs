@@ -2,18 +2,18 @@ namespace Mousetrap
 {
     public partial class Mousepark : Form
     {
-        private readonly double _stopOpacity;
+        private readonly TimeSpan _period;
         private readonly double _startOpacity;
-        private readonly Mousemove _move;
+        private readonly double _stopOpacity;
+        private CancellationTokenSource? _cancellation;
         private bool _isMovingForm = false;
         private Point _lastPosition;
-        private CancellationTokenSource? _cancellation;
 
         public Mousepark(TimeSpan period, double opacity)
         {
+            _period = period;
             _startOpacity = 1;
             _stopOpacity = opacity;
-            _move = new Mousemove(period);
             this.Opacity = _stopOpacity;
             InitializeComponent();
             _lastPosition = SetDefaultPosition();
@@ -24,11 +24,19 @@ namespace Mousetrap
             this.parkLabel.MouseUp += StopMove;
         }
 
-        private Point SetDefaultPosition()
+        private void Cancel()
         {
-            var position = GetDefaultPosition();
-            this.Location = position;
-            return position;
+            if (_cancellation == null) return;
+            Thread.EndCriticalRegion();
+            _cancellation.Cancel(false);
+            _cancellation.Dispose();
+            _cancellation = null;
+        }
+
+        private void Exit(object? sender, MouseEventArgs e)
+        {
+            Cancel();
+            Environment.Exit(0);
         }
 
         private Point GetDefaultPosition()
@@ -38,63 +46,30 @@ namespace Mousetrap
             return new Point(startX, 0);
         }
 
-        private async void Start(object? sender, EventArgs e)
-        {
-            await Start();
-        }
-
-        private void Stop(object? sender, EventArgs e)
-        {
-            Stop();
-        }
-
-        private void Exit(object? sender, MouseEventArgs e)
-        {
-            Cancel();
-            Environment.Exit(0);
-        }
-
-        private void StartMove(object? sender, MouseEventArgs e)
-        {
-            _isMovingForm = true;
-            _lastPosition = _move.GetCursorPosition();
-        }
-
-        private void StopMove(object? sender, MouseEventArgs e)
-        {
-            if (_isMovingForm == false) return;
-            _isMovingForm = false;
-            var defaultPosition = GetDefaultPosition();
-            var newPosition = _move.GetCursorPosition();
-            if (newPosition.X > defaultPosition.X && newPosition.Y < 50)
-            {
-                _lastPosition = defaultPosition;
-            }
-            else if (newPosition.X < 100 && newPosition.Y < 50)
-            {
-                _lastPosition = new Point(0, 0);
-            }
-            else if (Math.Abs(newPosition.X - _lastPosition.X) > 10 && Math.Abs(newPosition.Y - _lastPosition.Y) > 10)
-            {
-                _lastPosition = newPosition;
-            }
-            else
-            {
-                _lastPosition = this.Location;
-            }
-            this.Location = _lastPosition;
-        }
-
         private Point GetPosition()
         {
             Point lastPosition = _lastPosition;
             Point curentPosition = this.Location;
             Point defaultPosition = GetDefaultPosition();
-            Point newPosition = _move.GetCursorPosition();
+            Point newPosition = Cursor.Position;
             if (newPosition.X > defaultPosition.X && newPosition.Y < 50) return defaultPosition;
             if (newPosition.X < 100 && newPosition.Y < 50) return new Point(0, 0);
             if (IsSamePosition(newPosition, lastPosition) == false) return newPosition;
             return curentPosition;
+        }
+
+        private Point GetPosition(int no)
+        {
+            var dist = 5;
+            var p = Cursor.Position;
+            switch (no)
+            {
+                case 1: return new Point(p.X + dist, p.Y);
+                case 2: return new Point(p.X, p.Y + dist);
+                case 3: return new Point(p.X - dist, p.Y);
+                case 4: return new Point(p.X, p.Y - dist);
+                default: throw new ApplicationException();
+            }
         }
 
         private bool IsSamePosition(Point first, Point second, int accuracyX = 10, int accuracyY = 10)
@@ -104,12 +79,53 @@ namespace Mousetrap
             return true;
         }
 
-        private async ValueTask Start()
+        private async Task MoveMouse(int no, CancellationToken cancellation)
+        {
+            if (cancellation.IsCancellationRequested) return;
+            Cursor.Position = GetPosition(no);
+            await Task.Delay(_period);
+        }
+
+        private Point SetDefaultPosition()
+        {
+            var position = GetDefaultPosition();
+            this.Location = position;
+            return position;
+        }
+
+        private async void Start(object? sender, EventArgs e)
+        {
+            await Start();
+        }
+
+        private async Task Start()
         {
             this.Opacity = _startOpacity;
             this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
             _cancellation = new CancellationTokenSource();
-            await _move.Start(_cancellation.Token);
+            Thread.BeginCriticalRegion();
+            await StartPeriodicMove(_cancellation.Token);
+        }
+
+        private void StartMove(object? sender, MouseEventArgs e)
+        {
+            _isMovingForm = true;
+            _lastPosition = Cursor.Position;
+        }
+
+        private async Task StartPeriodicMove(CancellationToken cancellation)
+        {
+            var i = 0;
+            while (cancellation.IsCancellationRequested == false)
+            {
+                i = i++ % 4 + 1;
+                await MoveMouse(i, cancellation);
+            }
+        }
+
+        private void Stop(object? sender, EventArgs e)
+        {
+            Stop();
         }
 
         private void Stop()
@@ -119,12 +135,11 @@ namespace Mousetrap
             Cancel();
         }
 
-        private void Cancel()
+        private void StopMove(object? sender, MouseEventArgs e)
         {
-            if (_cancellation == null) return;
-            _cancellation.Cancel(false);
-            _cancellation.Dispose();
-            _cancellation = null;
+            if (_isMovingForm == false) return;
+            _isMovingForm = false;
+            this.Location = GetPosition();
         }
     }
 }
