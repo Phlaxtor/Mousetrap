@@ -10,27 +10,18 @@
     <PackageIcon>120px-202003_Model_animal_mouse.svg.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <StartupObject>Mousetrap.Program</StartupObject>
+    <ApplicationIcon>120px-202003_Model_animal_mouse.svg.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Mousemove.cs" />
+    <Content Include="120px-202003_Model_animal_mouse.svg.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="120px-202003_Model_animal_mouse.svg.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="120px-202003_Model_animal_mouse.svg.png">
+    <None Update="120px-202003_Model_animal_mouse.svg.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Mousemove.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
+    </None>
     <None Update="README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
