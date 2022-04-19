@@ -79,11 +79,16 @@ namespace Mousetrap
         private async ValueTask Move(CancellationToken cancellation)
         {
             if (cancellation.IsCancellationRequested) return;
-            int x = X;
-            int y = Y - 1;
-            SetCursorPos(x, y);
-            await Task.Delay(50);
-            SetCursorPos(X, Y);
+            var distance = 5;
+            var wait = 100;
+            SetCursorPos(X + distance, Y);
+            await Task.Delay(wait);
+            SetCursorPos(X, Y + distance);
+            await Task.Delay(wait);
+            SetCursorPos(X - distance, Y);
+            await Task.Delay(wait);
+            SetCursorPos(X, Y - distance);
+            await Task.Delay(wait);
         }
     }
 }
