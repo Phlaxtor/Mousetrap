@@ -4,24 +4,18 @@ namespace Mousetrap
 {
     public partial class Mousepark : Form
     {
-        public const EXECUTION_STATE AlwaysAwakeMode = AwakeState | EXECUTION_STATE.ES_CONTINUOUS;
-        public const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED;
-        private readonly TimeSpan _period;
-        private readonly double _startOpacity;
-        private readonly double _stopOpacity;
+        private const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED | EXECUTION_STATE.ES_CONTINUOUS;
+        private readonly double _startOpacity = 1;
+        private readonly double _stopOpacity = 0.1;
         private bool _alwaysAwakeModeOn = false;
-        private CancellationTokenSource? _cancellation;
         private bool _isMovingForm = false;
         private Point _lastPosition;
 
-        public Mousepark(TimeSpan period, double opacity)
+        internal Mousepark()
         {
-            _period = period;
-            _startOpacity = 1;
-            _stopOpacity = opacity;
-            this.Opacity = _stopOpacity;
             InitializeComponent();
-            _lastPosition = SetDefaultPosition();
+            SetStopLabel();
+            SetDefaultPosition();
             this.parkLabel.MouseClick += ToggleAwakeMode;
             this.parkLabel.MouseDoubleClick += Exit;
             this.parkLabel.MouseDown += StartMove;
@@ -33,18 +27,22 @@ namespace Mousetrap
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
 
-        private void Cancel()
-        {
-            if (_cancellation == null) return;
-            _cancellation.Cancel(false);
-            _cancellation.Dispose();
-            _cancellation = null;
-        }
-
         private void Exit(object? sender, MouseEventArgs e)
         {
-            Cancel();
             Environment.Exit(0);
+        }
+
+        private Point GetCurrentPosition()
+        {
+            var screenSize = Screen.PrimaryScreen.WorkingArea.Size;
+            var curentPosition = Cursor.Position;
+            var x = curentPosition.X;
+            var y = curentPosition.Y;
+            if (x < 50) x = 0;
+            if (x > screenSize.Width - 50) y = screenSize.Width - 200;
+            if (y < 50) x = 0;
+            if (y > screenSize.Height - 50) y = screenSize.Height - 50;
+            return new Point(x, y);
         }
 
         private Point GetDefaultPosition()
@@ -57,7 +55,7 @@ namespace Mousetrap
         private Point GetPosition()
         {
             Point lastPosition = _lastPosition;
-            Point curentPosition = this.Location;
+            Point curentPosition = GetCurrentPosition();
             Point defaultPosition = GetDefaultPosition();
             Point newPosition = Cursor.Position;
             if (newPosition.X > defaultPosition.X && newPosition.Y < 50) return defaultPosition;
@@ -73,24 +71,25 @@ namespace Mousetrap
             return true;
         }
 
-        private Point SetDefaultPosition()
+        private void SetDefaultPosition()
         {
             var position = GetDefaultPosition();
             this.Location = position;
-            return position;
+            _lastPosition = position;
         }
 
-        private void SetLabel(bool start)
+        private void SetStartLabel()
         {
-            if (start)
-            {
-                this.Opacity = _startOpacity;
-                this.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
-                this.parkLabel.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
-                this.parkLabel.ForeColor = _alwaysAwakeModeOn ? Color.Green : Color.Black;
-                this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
-            }
-            else if (_alwaysAwakeModeOn == false)
+            this.Opacity = _startOpacity;
+            this.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
+            this.parkLabel.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
+            this.parkLabel.ForeColor = _alwaysAwakeModeOn ? Color.Green : Color.Black;
+            this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
+        }
+
+        private void SetStopLabel()
+        {
+            if (_alwaysAwakeModeOn == false)
             {
                 this.Opacity = _stopOpacity;
                 this.BackColor = Color.LightGray;
@@ -100,16 +99,10 @@ namespace Mousetrap
             }
         }
 
-        private async void Start(object? sender, EventArgs e)
+        private void Start(object? sender, EventArgs e)
         {
-            await Start();
-        }
-
-        private async Task Start()
-        {
-            SetLabel(true);
-            _cancellation = new CancellationTokenSource();
-            await StartPeriodicMove(_cancellation.Token);
+            SetStartLabel();
+            SetThreadExecutionState(AwakeState);
         }
 
         private void StartMove(object? sender, MouseEventArgs e)
@@ -118,24 +111,9 @@ namespace Mousetrap
             _lastPosition = Cursor.Position;
         }
 
-        private async Task StartPeriodicMove(CancellationToken cancellation)
-        {
-            while (cancellation.IsCancellationRequested == false)
-            {
-                SetThreadExecutionState(AwakeState);
-                await Task.Delay(_period);
-            }
-        }
-
         private void Stop(object? sender, EventArgs e)
         {
-            Stop();
-        }
-
-        private void Stop()
-        {
-            SetLabel(false);
-            Cancel();
+            SetStopLabel();
         }
 
         private void StopMove(object? sender, MouseEventArgs e)
@@ -155,8 +133,8 @@ namespace Mousetrap
             _alwaysAwakeModeOn = !_alwaysAwakeModeOn;
             if (_alwaysAwakeModeOn)
             {
-                SetLabel(true);
-                SetThreadExecutionState(AlwaysAwakeMode);
+                SetStartLabel();
+                SetThreadExecutionState(AwakeState);
             }
             else
             {
