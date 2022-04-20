@@ -2,22 +2,14 @@ using System.Runtime.InteropServices;
 
 namespace Mousetrap
 {
-    [FlagsAttribute]
-    public enum EXECUTION_STATE : uint
-    {
-        ES_AWAYMODE_REQUIRED = 0x00000040,
-        ES_CONTINUOUS = 0x80000000,
-        ES_DISPLAY_REQUIRED = 0x00000002,
-        ES_SYSTEM_REQUIRED = 0x00000001
-    }
-
     public partial class Mousepark : Form
     {
+        public const EXECUTION_STATE AlwaysAwakeMode = AwakeState | EXECUTION_STATE.ES_CONTINUOUS;
         public const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED;
-        public const EXECUTION_STATE RevokeAwakeState = EXECUTION_STATE.ES_CONTINUOUS;
         private readonly TimeSpan _period;
         private readonly double _startOpacity;
         private readonly double _stopOpacity;
+        private bool _alwaysAwakeModeOn = false;
         private CancellationTokenSource? _cancellation;
         private bool _isMovingForm = false;
         private Point _lastPosition;
@@ -30,10 +22,11 @@ namespace Mousetrap
             this.Opacity = _stopOpacity;
             InitializeComponent();
             _lastPosition = SetDefaultPosition();
-            this.parkLabel.MouseHover += Start;
-            this.parkLabel.MouseLeave += Stop;
+            this.parkLabel.MouseClick += ToggleAwakeMode;
             this.parkLabel.MouseDoubleClick += Exit;
             this.parkLabel.MouseDown += StartMove;
+            this.parkLabel.MouseHover += Start;
+            this.parkLabel.MouseLeave += Stop;
             this.parkLabel.MouseUp += StopMove;
         }
 
@@ -43,8 +36,6 @@ namespace Mousetrap
         private void Cancel()
         {
             if (_cancellation == null) return;
-            SetNormalState();
-            Thread.EndCriticalRegion();
             _cancellation.Cancel(false);
             _cancellation.Dispose();
             _cancellation = null;
@@ -75,38 +66,11 @@ namespace Mousetrap
             return curentPosition;
         }
 
-        private Point GetPosition(int no)
-        {
-            var dist = 5;
-            var p = Cursor.Position;
-            switch (no)
-            {
-                case 1: return new Point(p.X + dist, p.Y);
-                case 2: return new Point(p.X, p.Y + dist);
-                case 3: return new Point(p.X - dist, p.Y);
-                case 4: return new Point(p.X, p.Y - dist);
-                default: throw new ApplicationException();
-            }
-        }
-
         private bool IsSamePosition(Point first, Point second, int accuracyX = 10, int accuracyY = 10)
         {
             if (Math.Abs(first.X - second.X) > accuracyX) return false;
             if (Math.Abs(first.Y - second.Y) > accuracyY) return false;
             return true;
-        }
-
-        private async Task MoveMouse(int no, CancellationToken cancellation)
-        {
-            if (cancellation.IsCancellationRequested) return;
-            Cursor.Position = GetPosition(no);
-            SetAwakeState();
-            await Task.Delay(_period);
-        }
-
-        private void SetAwakeState()
-        {
-            var previousState = SetThreadExecutionState(AwakeState);
         }
 
         private Point SetDefaultPosition()
@@ -116,9 +80,24 @@ namespace Mousetrap
             return position;
         }
 
-        private void SetNormalState()
+        private void SetLabel(bool start)
         {
-            var previousState = SetThreadExecutionState(RevokeAwakeState);
+            if (start)
+            {
+                this.Opacity = _startOpacity;
+                this.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
+                this.parkLabel.BackColor = _alwaysAwakeModeOn ? Color.LightGray : Color.LightGray;
+                this.parkLabel.ForeColor = _alwaysAwakeModeOn ? Color.Green : Color.Black;
+                this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
+            }
+            else if (_alwaysAwakeModeOn == false)
+            {
+                this.Opacity = _stopOpacity;
+                this.BackColor = Color.LightGray;
+                this.parkLabel.BackColor = Color.LightGray;
+                this.parkLabel.ForeColor = Color.Black;
+                this.parkLabel.Text = string.Empty;
+            }
         }
 
         private async void Start(object? sender, EventArgs e)
@@ -128,10 +107,8 @@ namespace Mousetrap
 
         private async Task Start()
         {
-            this.Opacity = _startOpacity;
-            this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
+            SetLabel(true);
             _cancellation = new CancellationTokenSource();
-            Thread.BeginCriticalRegion();
             await StartPeriodicMove(_cancellation.Token);
         }
 
@@ -143,11 +120,10 @@ namespace Mousetrap
 
         private async Task StartPeriodicMove(CancellationToken cancellation)
         {
-            var i = 0;
             while (cancellation.IsCancellationRequested == false)
             {
-                i = i++ % 4 + 1;
-                await MoveMouse(i, cancellation);
+                SetThreadExecutionState(AwakeState);
+                await Task.Delay(_period);
             }
         }
 
@@ -158,8 +134,7 @@ namespace Mousetrap
 
         private void Stop()
         {
-            this.Opacity = _stopOpacity;
-            this.parkLabel.Text = string.Empty;
+            SetLabel(false);
             Cancel();
         }
 
@@ -168,6 +143,25 @@ namespace Mousetrap
             if (_isMovingForm == false) return;
             _isMovingForm = false;
             this.Location = GetPosition();
+        }
+
+        private void ToggleAwakeMode(object? sender, MouseEventArgs e)
+        {
+            ToggleAwakeMode();
+        }
+
+        private void ToggleAwakeMode()
+        {
+            _alwaysAwakeModeOn = !_alwaysAwakeModeOn;
+            if (_alwaysAwakeModeOn)
+            {
+                SetLabel(true);
+                SetThreadExecutionState(AlwaysAwakeMode);
+            }
+            else
+            {
+                SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            }
         }
     }
 }

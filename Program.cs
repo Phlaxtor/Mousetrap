@@ -6,7 +6,7 @@ namespace Mousetrap
         private static void Main()
         {
             ApplicationConfiguration.Initialize();
-            Application.Run(new Mousepark(TimeSpan.FromSeconds(10), 0.2));
+            Application.Run(new Mousepark(TimeSpan.FromSeconds(10), 0.1));
         }
     }
 }
