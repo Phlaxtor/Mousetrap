@@ -1,13 +1,26 @@
+using System.Runtime.InteropServices;
+
 namespace Mousetrap
 {
+    [FlagsAttribute]
+    public enum EXECUTION_STATE : uint
+    {
+        ES_AWAYMODE_REQUIRED = 0x00000040,
+        ES_CONTINUOUS = 0x80000000,
+        ES_DISPLAY_REQUIRED = 0x00000002,
+        ES_SYSTEM_REQUIRED = 0x00000001
+    }
+
     public partial class Mousepark : Form
     {
+        public const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_AWAYMODE_REQUIRED;
         private readonly TimeSpan _period;
         private readonly double _startOpacity;
         private readonly double _stopOpacity;
         private CancellationTokenSource? _cancellation;
         private bool _isMovingForm = false;
         private Point _lastPosition;
+        private EXECUTION_STATE? _previousState;
 
         public Mousepark(TimeSpan period, double opacity)
         {
@@ -24,9 +37,13 @@ namespace Mousetrap
             this.parkLabel.MouseUp += StopMove;
         }
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
         private void Cancel()
         {
             if (_cancellation == null) return;
+            SetNormalState();
             Thread.EndCriticalRegion();
             _cancellation.Cancel(false);
             _cancellation.Dispose();
@@ -86,11 +103,28 @@ namespace Mousetrap
             await Task.Delay(_period);
         }
 
+        private void SetAwakeState()
+        {
+            var previousState = SetThreadExecutionState(AwakeState);
+            if (previousState != AwakeState)
+            {
+                _previousState = previousState;
+            }
+        }
+
         private Point SetDefaultPosition()
         {
             var position = GetDefaultPosition();
             this.Location = position;
             return position;
+        }
+
+        private void SetNormalState()
+        {
+            if (_previousState.HasValue)
+            {
+                SetThreadExecutionState(_previousState.Value);
+            }
         }
 
         private async void Start(object? sender, EventArgs e)
@@ -104,6 +138,7 @@ namespace Mousetrap
             this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
             _cancellation = new CancellationTokenSource();
             Thread.BeginCriticalRegion();
+            SetAwakeState();
             await StartPeriodicMove(_cancellation.Token);
         }
 
