@@ -13,14 +13,14 @@ namespace Mousetrap
 
     public partial class Mousepark : Form
     {
-        public const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_AWAYMODE_REQUIRED;
+        public const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED;
+        public const EXECUTION_STATE RevokeAwakeState = EXECUTION_STATE.ES_CONTINUOUS;
         private readonly TimeSpan _period;
         private readonly double _startOpacity;
         private readonly double _stopOpacity;
         private CancellationTokenSource? _cancellation;
         private bool _isMovingForm = false;
         private Point _lastPosition;
-        private EXECUTION_STATE? _previousState;
 
         public Mousepark(TimeSpan period, double opacity)
         {
@@ -100,16 +100,13 @@ namespace Mousetrap
         {
             if (cancellation.IsCancellationRequested) return;
             Cursor.Position = GetPosition(no);
+            SetAwakeState();
             await Task.Delay(_period);
         }
 
         private void SetAwakeState()
         {
             var previousState = SetThreadExecutionState(AwakeState);
-            if (previousState != AwakeState)
-            {
-                _previousState = previousState;
-            }
         }
 
         private Point SetDefaultPosition()
@@ -121,10 +118,7 @@ namespace Mousetrap
 
         private void SetNormalState()
         {
-            if (_previousState.HasValue)
-            {
-                SetThreadExecutionState(_previousState.Value);
-            }
+            var previousState = SetThreadExecutionState(RevokeAwakeState);
         }
 
         private async void Start(object? sender, EventArgs e)
@@ -138,7 +132,6 @@ namespace Mousetrap
             this.parkLabel.Text = DateTime.Now.ToString("HH:mm");
             _cancellation = new CancellationTokenSource();
             Thread.BeginCriticalRegion();
-            SetAwakeState();
             await StartPeriodicMove(_cancellation.Token);
         }
 
