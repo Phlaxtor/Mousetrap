@@ -28,54 +28,35 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.parkLabel = new System.Windows.Forms.Label();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Mousepark));
             this.SuspendLayout();
-            // 
-            // parkLabel
-            // 
-            this.parkLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.parkLabel.AutoSize = true;
-            this.parkLabel.BackColor = System.Drawing.Color.LightGray;
-            this.parkLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.parkLabel.Location = new System.Drawing.Point(10, 4);
-            this.parkLabel.Margin = new System.Windows.Forms.Padding(0);
-            this.parkLabel.MaximumSize = new System.Drawing.Size(200, 50);
-            this.parkLabel.MinimumSize = new System.Drawing.Size(200, 50);
-            this.parkLabel.Name = "parkLabel";
-            this.parkLabel.Size = new System.Drawing.Size(200, 50);
-            this.parkLabel.TabIndex = 0;
-            this.parkLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // Mousepark
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 28F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.LightGray;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.ClientSize = new System.Drawing.Size(220, 56);
+            this.ClientSize = new System.Drawing.Size(30, 30);
             this.ControlBox = false;
-            this.Controls.Add(this.parkLabel);
-            this.Cursor = System.Windows.Forms.Cursors.WaitCursor;
             this.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.ForeColor = System.Drawing.Color.Black;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.MaximumSize = new System.Drawing.Size(220, 56);
-            this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(220, 56);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximumSize = new System.Drawing.Size(30, 30);
+            this.MinimumSize = new System.Drawing.Size(30, 30);
             this.Name = "Mousepark";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.TopMost = true;
+            this.TransparencyKey = System.Drawing.Color.Transparent;
+            this.UseWaitCursor = true;
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private Label parkLabel;
     }
 }
