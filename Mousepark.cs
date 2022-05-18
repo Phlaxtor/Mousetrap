@@ -18,7 +18,7 @@ namespace Mousetrap
         internal Mousepark()
         {
             InitializeComponent();
-            SetStopLabel();
+            TryStopAwakeState();
             SetDefaultPosition();
             this.KeyUp += PerformAction;
             this.MouseClick += ToggleAwakeMode;
@@ -35,6 +35,7 @@ namespace Mousetrap
 
         private void Exit(object? sender, MouseEventArgs e)
         {
+            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
             Environment.Exit(0);
         }
 
@@ -136,31 +137,16 @@ namespace Mousetrap
             _lastPosition = newPosition;
         }
 
-        private void SetStartLabel()
-        {
-            this.Opacity = _alwaysAwakeModeOn ? _alwaysOnOpacity : _startOpacity;
-            this.BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
-        }
-
-        private void SetStopAlwaysOnLabel()
-        {
-            this.Opacity = _startOpacity;
-            this.BackColor = _backColor;
-        }
-
-        private void SetStopLabel()
-        {
-            if (_alwaysAwakeModeOn == false)
-            {
-                this.Opacity = _stopOpacity;
-                this.BackColor = _backColor;
-            }
-        }
-
         private void Start(object? sender, EventArgs e)
         {
-            SetStartLabel();
+            StartAwakeState();
+        }
+
+        private void StartAwakeState()
+        {
             SetThreadExecutionState(AwakeState);
+            this.Opacity = _alwaysAwakeModeOn ? _alwaysOnOpacity : _startOpacity;
+            this.BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
         private void StartMove(object? sender, MouseEventArgs e)
@@ -171,7 +157,14 @@ namespace Mousetrap
 
         private void Stop(object? sender, EventArgs e)
         {
-            SetStopLabel();
+            TryStopAwakeState();
+        }
+
+        private void StopAlwaysOnAwakeState()
+        {
+            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            this.Opacity = _startOpacity;
+            this.BackColor = _backColor;
         }
 
         private void StopMove(object? sender, MouseEventArgs e)
@@ -192,13 +185,21 @@ namespace Mousetrap
             _alwaysAwakeModeOn = !_alwaysAwakeModeOn;
             if (_alwaysAwakeModeOn)
             {
-                SetStartLabel();
-                SetThreadExecutionState(AwakeState);
+                StartAwakeState();
             }
             else
             {
-                SetStopAlwaysOnLabel();
+                StopAlwaysOnAwakeState();
+            }
+        }
+
+        private void TryStopAwakeState()
+        {
+            if (_alwaysAwakeModeOn == false)
+            {
                 SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+                this.Opacity = _stopOpacity;
+                this.BackColor = _backColor;
             }
         }
     }
