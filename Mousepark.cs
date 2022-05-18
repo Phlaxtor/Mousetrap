@@ -5,18 +5,22 @@ namespace Mousetrap
     public partial class Mousepark : Form
     {
         private const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED | EXECUTION_STATE.ES_CONTINUOUS;
-        private readonly double _alwaysOnOpacity = 0.5;
         private readonly Color _backColor = Color.LightGray;
         private readonly Color _backColorAlwaysOn = Color.Beige;
-        private readonly double _startOpacity = 1;
-        private readonly double _stopOpacity = 0.1;
+        private readonly Color _backColorShow = Color.GreenYellow;
+        private readonly double _opacityAlwaysOn = 0.4;
+        private readonly double _opacityShow = 0.6;
+        private readonly double _opacityStart = 1;
+        private readonly double _opacityStop = 0.1;
+        private readonly int _showForm;
         private bool _alwaysAwakeModeOn = false;
         private bool _isInitAction = false;
         private bool _isMovingForm = false;
         private Point _lastPosition;
 
-        internal Mousepark()
+        internal Mousepark(int showForm)
         {
+            _showForm = showForm;
             InitializeComponent();
             TryStopAwakeState();
             SetDefaultPosition();
@@ -28,6 +32,12 @@ namespace Mousetrap
             this.MouseLeave += Stop;
             this.MouseMove += StartMove;
             this.MouseUp += StopMove;
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == _showForm) Show();
+            base.WndProc(ref m);
         }
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -137,6 +147,14 @@ namespace Mousetrap
             _lastPosition = newPosition;
         }
 
+        private void Show()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            this.Opacity = _opacityShow;
+            this.BackColor = _backColorShow;
+        }
+
         private void Start(object? sender, EventArgs e)
         {
             StartAwakeState();
@@ -145,7 +163,7 @@ namespace Mousetrap
         private void StartAwakeState()
         {
             SetThreadExecutionState(AwakeState);
-            this.Opacity = _alwaysAwakeModeOn ? _alwaysOnOpacity : _startOpacity;
+            this.Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStart;
             this.BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
@@ -163,7 +181,7 @@ namespace Mousetrap
         private void StopAlwaysOnAwakeState()
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-            this.Opacity = _startOpacity;
+            this.Opacity = _opacityStart;
             this.BackColor = _backColor;
         }
 
@@ -198,7 +216,7 @@ namespace Mousetrap
             if (_alwaysAwakeModeOn == false)
             {
                 SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-                this.Opacity = _stopOpacity;
+                this.Opacity = _opacityStop;
                 this.BackColor = _backColor;
             }
         }
