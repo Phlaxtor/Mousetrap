@@ -174,7 +174,6 @@ namespace Mousetrap
 
         private void StopAlwaysOnAwakeState()
         {
-            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
             Opacity = _opacityStart;
             BackColor = _backColor;
         }
