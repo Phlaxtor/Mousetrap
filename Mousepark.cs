@@ -12,31 +12,31 @@ namespace Mousetrap
         private readonly double _opacityShow = 0.6;
         private readonly double _opacityStart = 1;
         private readonly double _opacityStop = 0.1;
-        private readonly int _showForm;
         private bool _alwaysAwakeModeOn = false;
         private bool _isInitAction = false;
         private bool _isMovingForm = false;
         private Point _lastPosition;
+        private readonly int _showMsg;
 
-        internal Mousepark(int showForm)
+        internal Mousepark(int showMsg)
         {
-            _showForm = showForm;
+            _showMsg = showMsg;
             InitializeComponent();
             TryStopAwakeState();
             SetDefaultPosition();
-            this.KeyUp += PerformAction;
-            this.MouseClick += ToggleAwakeMode;
-            this.MouseDoubleClick += Exit;
-            this.MouseDown += InitAction;
-            this.MouseHover += Start;
-            this.MouseLeave += Stop;
-            this.MouseMove += StartMove;
-            this.MouseUp += StopMove;
+            KeyUp += PerformAction;
+            MouseClick += ToggleAwakeMode;
+            MouseDoubleClick += Exit;
+            MouseDown += InitAction;
+            MouseHover += Start;
+            MouseLeave += Stop;
+            MouseMove += StartMove;
+            MouseUp += StopMove;
         }
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == _showForm) Show();
+            if (m.Msg == _showMsg) MakeVisible();
             base.WndProc(ref m);
         }
 
@@ -51,14 +51,14 @@ namespace Mousetrap
 
         private Point GetDefaultPosition()
         {
-            var screenWidth = Screen.PrimaryScreen.WorkingArea.Size.Width;
-            var startX = screenWidth - this.Width;
+            int screenWidth = Screen.PrimaryScreen.WorkingArea.Size.Width;
+            int startX = screenWidth - Width;
             return new Point(startX, 0);
         }
 
         private Point GetNewPosition(Point curentPosition)
         {
-            Point thisSize = (Point)this.Size;
+            Point thisSize = (Point)Size;
             Point screenSize = (Point)Screen.PrimaryScreen.WorkingArea.Size;
             int x, y;
 
@@ -84,6 +84,14 @@ namespace Mousetrap
             if (Math.Abs(first.X - second.X) > accuracyX) return false;
             if (Math.Abs(first.Y - second.Y) > accuracyY) return false;
             return true;
+        }
+
+        private void MakeVisible()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = _opacityShow;
+            BackColor = _backColorShow;
         }
 
         private void PerformAction(object? sender, KeyEventArgs e)
@@ -133,8 +141,8 @@ namespace Mousetrap
 
         private void SetDefaultPosition()
         {
-            var position = GetDefaultPosition();
-            this.Location = position;
+            Point position = GetDefaultPosition();
+            Location = position;
             _lastPosition = position;
         }
 
@@ -143,16 +151,8 @@ namespace Mousetrap
             Point lastPosition = _lastPosition;
             Point newPosition = GetNewPosition(position);
             if (IsSamePosition(newPosition, lastPosition)) newPosition = lastPosition;
-            this.Location = newPosition;
+            Location = newPosition;
             _lastPosition = newPosition;
-        }
-
-        private void Show()
-        {
-            WindowState = FormWindowState.Normal;
-            TopMost = true;
-            this.Opacity = _opacityShow;
-            this.BackColor = _backColorShow;
         }
 
         private void Start(object? sender, EventArgs e)
@@ -163,8 +163,8 @@ namespace Mousetrap
         private void StartAwakeState()
         {
             SetThreadExecutionState(AwakeState);
-            this.Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStart;
-            this.BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
+            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStart;
+            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
         private void StartMove(object? sender, MouseEventArgs e)
@@ -181,8 +181,8 @@ namespace Mousetrap
         private void StopAlwaysOnAwakeState()
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-            this.Opacity = _opacityStart;
-            this.BackColor = _backColor;
+            Opacity = _opacityStart;
+            BackColor = _backColor;
         }
 
         private void StopMove(object? sender, MouseEventArgs e)
@@ -216,8 +216,8 @@ namespace Mousetrap
             if (_alwaysAwakeModeOn == false)
             {
                 SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-                this.Opacity = _opacityStop;
-                this.BackColor = _backColor;
+                Opacity = _opacityStop;
+                BackColor = _backColor;
             }
         }
     }
