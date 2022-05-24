@@ -1,10 +1,7 @@
-using System.Runtime.InteropServices;
-
 namespace Mousetrap
 {
     public partial class Mousepark : Form
     {
-        private const EXECUTION_STATE AwakeState = EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED | EXECUTION_STATE.ES_CONTINUOUS;
         private readonly Color _backColor = Color.LightGray;
         private readonly Color _backColorAlwaysOn = Color.Beige;
         private readonly Color _backColorShow = Color.GreenYellow;
@@ -12,13 +9,13 @@ namespace Mousetrap
         private readonly double _opacityShow = 0.6;
         private readonly double _opacityStart = 1;
         private readonly double _opacityStop = 0.1;
+        private readonly uint _showMsg;
         private bool _alwaysAwakeModeOn = false;
         private bool _isInitAction = false;
         private bool _isMovingForm = false;
         private Point _lastPosition;
-        private readonly int _showMsg;
 
-        internal Mousepark(int showMsg)
+        internal Mousepark(uint showMsg)
         {
             _showMsg = showMsg;
             InitializeComponent();
@@ -36,17 +33,14 @@ namespace Mousetrap
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == _showMsg) MakeVisible();
+            if (m.Msg == (int)_showMsg) MakeVisible();
             base.WndProc(ref m);
         }
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
-
         private void Exit(object? sender, MouseEventArgs e)
         {
-            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-            Environment.Exit(0);
+            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            Application.Exit();
         }
 
         private Point GetDefaultPosition()
@@ -162,7 +156,7 @@ namespace Mousetrap
 
         private void StartAwakeState()
         {
-            SetThreadExecutionState(AwakeState);
+            InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
             Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStart;
             BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
@@ -180,7 +174,7 @@ namespace Mousetrap
 
         private void StopAlwaysOnAwakeState()
         {
-            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
             Opacity = _opacityStart;
             BackColor = _backColor;
         }
@@ -215,7 +209,7 @@ namespace Mousetrap
         {
             if (_alwaysAwakeModeOn == false)
             {
-                SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+                InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
                 Opacity = _opacityStop;
                 BackColor = _backColor;
             }

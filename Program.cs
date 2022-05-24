@@ -1,32 +1,44 @@
-using System.Runtime.InteropServices;
-
 namespace Mousetrap
 {
     internal static class Program
     {
-        private const int HWND_BROADCAST = 0xffff;
         private static readonly Mutex _mutex = new Mutex(true, @"Global\Mousepark.Unique");
-        private static readonly int _showMsg = RegisterWindowMessage("WM_SHOWAPPLICATION");
+        private static readonly uint _showMsg = InteropFunctions.RegisterWindowMessage("WM_SHOWAPPLICATION");
 
         [STAThread]
         private static void Main()
         {
-            if (_mutex.WaitOne(TimeSpan.Zero, true))
-            {
-                ApplicationConfiguration.Initialize();
-                Application.Run(new Mousepark(_showMsg));
-                _mutex.ReleaseMutex();
-            }
-            else
-            {
-                PostMessage((IntPtr)HWND_BROADCAST, _showMsg, IntPtr.Zero, IntPtr.Zero);
-            }
+            if (RunApplication() == false) ShowApplication();
         }
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
+        private static bool RunApplication()
+        {
+            if (_mutex.WaitOne(TimeSpan.Zero, true) == false) return false;
+            StartApplication();
+            return true;
+        }
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int RegisterWindowMessage(string message);
+        private static void ShowApplication()
+        {
+            var r = InteropFunctions.SendNotifyMessageA((IntPtr)InteropFunctions.HWND_BROADCAST, _showMsg, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        private static void StartApplication()
+        {
+            try
+            {
+                ApplicationConfiguration.Initialize();
+                using var form = new Mousepark(_showMsg);
+                Application.Run(form);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, e.GetType().Name);
+            }
+            finally
+            {
+                _mutex.ReleaseMutex();
+            }
+        }
     }
 }
