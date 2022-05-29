@@ -20,7 +20,7 @@ namespace Mousetrap
 
         private static void ShowApplication()
         {
-            var r = InteropFunctions.SendNotifyMessageA((IntPtr)InteropFunctions.HWND_BROADCAST, _showMsg, IntPtr.Zero, IntPtr.Zero);
+            bool r = InteropFunctions.SendNotifyMessageA((IntPtr)InteropFunctions.HWND_BROADCAST, _showMsg, IntPtr.Zero, IntPtr.Zero);
         }
 
         private static void StartApplication()
@@ -28,7 +28,7 @@ namespace Mousetrap
             try
             {
                 ApplicationConfiguration.Initialize();
-                using var form = new Mousepark(_showMsg);
+                using Mousepark form = new Mousepark(_showMsg);
                 Application.Run(form);
             }
             catch (Exception e)

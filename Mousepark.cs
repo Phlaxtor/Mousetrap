@@ -11,7 +11,8 @@ namespace Mousetrap
         private readonly double _opacityStop = 0.1;
         private readonly uint _showMsg;
         private bool _alwaysAwakeModeOn = false;
-        private bool _isInitAction = false;
+        private CancellationTokenSource? _cancellationTokenSource;
+        private bool _isInAction = false;
         private bool _isMovingForm = false;
         private Point _lastPosition;
 
@@ -19,35 +20,80 @@ namespace Mousetrap
         {
             _showMsg = showMsg;
             InitializeComponent();
-            TryStopAwakeState();
-            SetDefaultPosition();
-            KeyUp += PerformAction;
-            MouseClick += ToggleAwakeMode;
-            MouseDoubleClick += Exit;
-            MouseDown += InitAction;
-            MouseHover += Start;
-            MouseLeave += Stop;
-            MouseMove += StartMove;
-            MouseUp += StopMove;
+            TryEndAwakeState();
+            SetPosition(ParkPosition.UpperRight);
+            KeyUp += MainKeyUp;
+            MouseClick += MainMouseClick;
+            MouseDoubleClick += MainMouseDoubleClick;
+            MouseDown += MainMouseDown;
+            MouseHover += MainMouseHover;
+            MouseLeave += MainMouseLeave;
+            MouseMove += MainMouseMove;
+            MouseUp += MainMouseUp;
         }
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == (int)_showMsg) MakeVisible();
+            if (m.Msg == (int)_showMsg) ShowApplication();
             base.WndProc(ref m);
         }
 
-        private void Exit(object? sender, MouseEventArgs e)
+        private void DoCancellation()
+        {
+            if (_cancellationTokenSource == null) return;
+            _cancellationTokenSource.Cancel(false);
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
+        }
+
+        private void EndAlwaysAwakeState()
+        {
+            _alwaysAwakeModeOn = false;
+            EndAwakeState();
+            SetDefaultPresentation();
+        }
+
+        private void EndAwakeState()
+        {
+            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStop;
+            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
+        }
+
+        private async Task ExecuteTimer(TimeSpan period, Action action)
+        {
+            await ExecuteTimer(period);
+            action();
+        }
+
+        private async Task ExecuteTimer(TimeSpan period)
+        {
+            try
+            {
+                CancellationToken cancellationToken = GetCancellationToken();
+                using PeriodicTimer? timer = new PeriodicTimer(period);
+                await timer.WaitForNextTickAsync(cancellationToken);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                DoCancellation();
+            }
+        }
+
+        private void Exit()
         {
             InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
             Application.Exit();
         }
 
-        private Point GetDefaultPosition()
+        private CancellationToken GetCancellationToken()
         {
-            int screenWidth = Screen.PrimaryScreen.WorkingArea.Size.Width;
-            int startX = screenWidth - Width;
-            return new Point(startX, 0);
+            if (_cancellationTokenSource != null) return _cancellationTokenSource.Token;
+            _cancellationTokenSource = new CancellationTokenSource();
+            return _cancellationTokenSource.Token;
         }
 
         private Point GetNewPosition(Point curentPosition)
@@ -58,19 +104,35 @@ namespace Mousetrap
 
             if (curentPosition.X < 50) x = 0;
             else if (curentPosition.X > screenSize.X - thisSize.X) x = screenSize.X - thisSize.X;
-            else x = curentPosition.X;
+            else x = curentPosition.X - (thisSize.X / 2);
 
             if (curentPosition.Y < 50) y = 0;
             else if (curentPosition.Y > screenSize.Y - thisSize.Y) y = screenSize.Y - thisSize.Y;
-            else y = curentPosition.Y;
+            else y = curentPosition.Y - (thisSize.Y / 2);
 
             return new Point(x, y);
         }
 
-        private void InitAction(object? sender, MouseEventArgs e)
+        private TimeSpan GetTimerValue()
         {
-            _isMovingForm = false;
-            _isInitAction = true;
+            using TimerDialog? dialog = new TimerDialog();
+            if (dialog.ShowDialog(this) == DialogResult.OK) return dialog.Value;
+            return TimeSpan.Zero;
+        }
+
+        private void HideApplication()
+        {
+            WindowState = FormWindowState.Minimized;
+            TopMost = false;
+        }
+
+        private bool IsCursorHovering()
+        {
+            if (Cursor.Position.X > _lastPosition.X + (Size.Width / 2)) return false;
+            if (Cursor.Position.X < _lastPosition.X - (Size.Width / 2)) return false;
+            if (Cursor.Position.Y > _lastPosition.Y + (Size.Height / 2)) return false;
+            if (Cursor.Position.Y < _lastPosition.Y - (Size.Height / 2)) return false;
+            return true;
         }
 
         private bool IsSamePosition(Point first, Point second, int accuracyX = 10, int accuracyY = 10)
@@ -80,64 +142,176 @@ namespace Mousetrap
             return true;
         }
 
-        private void MakeVisible()
+        private async void MainKeyUp(object? sender, KeyEventArgs e)
+        {
+            if (_isInAction == false) return;
+            _isInAction = false;
+
+            switch (e.KeyCode)
+            {
+                case Keys.D1:
+                    SetPosition(ParkPosition.UpperLeft);
+                    break;
+
+                case Keys.D2:
+                    SetPosition(ParkPosition.UpperMiddle);
+                    break;
+
+                case Keys.D3:
+                    SetPosition(ParkPosition.UpperRight);
+                    break;
+
+                case Keys.D4:
+                    SetPosition(ParkPosition.MiddleLeft);
+                    break;
+
+                case Keys.D5:
+                    SetPosition(ParkPosition.MiddleMiddle);
+                    break;
+
+                case Keys.D6:
+                    SetPosition(ParkPosition.MiddleRight);
+                    break;
+
+                case Keys.D7:
+                    SetPosition(ParkPosition.LowerLeft);
+                    break;
+
+                case Keys.D8:
+                    SetPosition(ParkPosition.LowerMiddle);
+                    break;
+
+                case Keys.D9:
+                    SetPosition(ParkPosition.LowerRight);
+                    break;
+
+                case Keys.A:
+                    await ShowApplicationAsync();
+                    break;
+
+                case Keys.C:
+                    DoCancellation();
+                    break;
+
+                case Keys.E:
+                    EndAlwaysAwakeState();
+                    break;
+
+                case Keys.H:
+                    HideApplication();
+                    break;
+
+                case Keys.M:
+                    _isMovingForm = true;
+                    break;
+
+                case Keys.Q:
+                    Exit();
+                    break;
+
+                case Keys.S:
+                    StartAlwaysAwakeState();
+                    break;
+
+                case Keys.T:
+                    await StartTimer();
+                    break;
+            }
+        }
+
+        private void MainMouseClick(object? sender, MouseEventArgs e)
+        {
+            StartAction();
+        }
+
+        private void MainMouseDoubleClick(object? sender, MouseEventArgs e)
+        {
+            Exit();
+        }
+
+        private void MainMouseDown(object? sender, MouseEventArgs e)
+        {
+        }
+
+        private void MainMouseHover(object? sender, EventArgs e)
+        {
+            StartAwakeState();
+        }
+
+        private void MainMouseLeave(object? sender, EventArgs e)
+        {
+            TryEndAwakeState();
+        }
+
+        private void MainMouseMove(object? sender, MouseEventArgs e)
+        {
+            MoveForm();
+        }
+
+        private void MainMouseUp(object? sender, MouseEventArgs e)
+        {
+        }
+
+        private void MoveForm()
+        {
+            if (_isMovingForm == false) return;
+            SetPosition(Cursor.Position);
+        }
+
+        private void SetDefaultPresentation()
         {
             WindowState = FormWindowState.Normal;
             TopMost = true;
-            Opacity = _opacityShow;
-            BackColor = _backColorShow;
+            double defaultOpacity = IsCursorHovering() ? _opacityStart : _opacityStop;
+            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : defaultOpacity;
+            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
-        private void PerformAction(object? sender, KeyEventArgs e)
+        private void SetPosition(ParkPosition position)
         {
-            if (_isInitAction == false) return;
-            _isInitAction = false;
             Point screenSize = (Point)Screen.PrimaryScreen.WorkingArea.Size;
             int maxX = screenSize.X;
             int maxY = screenSize.Y;
             int middleX = screenSize.X / 2;
             int middleY = screenSize.Y / 2;
-            switch (e.KeyCode)
+            switch (position)
             {
-                case Keys.Q:
+                case ParkPosition.UpperLeft:
                     SetPosition(new Point(0, 0));
                     break;
 
-                case Keys.W:
+                case ParkPosition.UpperMiddle:
                     SetPosition(new Point(middleX, 0));
                     break;
 
-                case Keys.E:
+                case ParkPosition.UpperRight:
                     SetPosition(new Point(maxX, 0));
                     break;
 
-                case Keys.D:
+                case ParkPosition.MiddleLeft:
+                    SetPosition(new Point(0, middleY));
+                    break;
+
+                case ParkPosition.MiddleMiddle:
+                    SetPosition(new Point(middleX, middleY));
+                    break;
+
+                case ParkPosition.MiddleRight:
                     SetPosition(new Point(maxX, middleY));
                     break;
 
-                case Keys.C:
-                    SetPosition(new Point(maxX, maxY));
-                    break;
-
-                case Keys.X:
-                    SetPosition(new Point(middleX, maxY));
-                    break;
-
-                case Keys.Z:
+                case ParkPosition.LowerLeft:
                     SetPosition(new Point(0, maxY));
                     break;
 
-                case Keys.A:
-                    SetPosition(new Point(0, middleY));
+                case ParkPosition.LowerMiddle:
+                    SetPosition(new Point(middleX, maxY));
+                    break;
+
+                case ParkPosition.LowerRight:
+                    SetPosition(new Point(maxX, maxY));
                     break;
             }
-        }
-
-        private void SetDefaultPosition()
-        {
-            Point position = GetDefaultPosition();
-            Location = position;
-            _lastPosition = position;
         }
 
         private void SetPosition(Point position)
@@ -149,8 +323,31 @@ namespace Mousetrap
             _lastPosition = newPosition;
         }
 
-        private void Start(object? sender, EventArgs e)
+        private void ShowApplication()
         {
+            TimeSpan time = TimeSpan.FromSeconds(3);
+            ShowApplicationAsync().Wait(time);
+        }
+
+        private async Task ShowApplicationAsync()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = _opacityShow;
+            BackColor = _backColorShow;
+            TimeSpan time = TimeSpan.FromSeconds(2);
+            await ExecuteTimer(time, SetDefaultPresentation);
+        }
+
+        private void StartAction()
+        {
+            _isInAction = true;
+            _isMovingForm = false;
+        }
+
+        private void StartAlwaysAwakeState()
+        {
+            _alwaysAwakeModeOn = true;
             StartAwakeState();
         }
 
@@ -161,57 +358,19 @@ namespace Mousetrap
             BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
-        private void StartMove(object? sender, MouseEventArgs e)
+        private async Task StartTimer()
         {
-            if (_isInitAction) _isMovingForm = true;
-            _isInitAction = false;
+            TimeSpan time = GetTimerValue();
+            if (time == TimeSpan.Zero) return;
+            StartAlwaysAwakeState();
+            await ExecuteTimer(time, EndAlwaysAwakeState);
         }
 
-        private void Stop(object? sender, EventArgs e)
+        private bool TryEndAwakeState()
         {
-            TryStopAwakeState();
-        }
-
-        private void StopAlwaysOnAwakeState()
-        {
-            Opacity = _opacityStart;
-            BackColor = _backColor;
-        }
-
-        private void StopMove(object? sender, MouseEventArgs e)
-        {
-            _isInitAction = false;
-            if (_isMovingForm == false) return;
-            _isMovingForm = false;
-            SetPosition(Cursor.Position);
-        }
-
-        private void ToggleAwakeMode(object? sender, MouseEventArgs e)
-        {
-            ToggleAwakeMode();
-        }
-
-        private void ToggleAwakeMode()
-        {
-            _alwaysAwakeModeOn = !_alwaysAwakeModeOn;
-            if (_alwaysAwakeModeOn)
-            {
-                StartAwakeState();
-            }
-            else
-            {
-                StopAlwaysOnAwakeState();
-            }
-        }
-
-        private void TryStopAwakeState()
-        {
-            if (_alwaysAwakeModeOn == false)
-            {
-                InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-                Opacity = _opacityStop;
-                BackColor = _backColor;
-            }
+            if (_alwaysAwakeModeOn == true) return false;
+            EndAwakeState();
+            return true;
         }
     }
 }
