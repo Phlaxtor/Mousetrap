@@ -51,78 +51,85 @@ partial class TimerDialog
             this._layout.Controls.Add(this._seconds, 2, 0);
             this._layout.Dock = System.Windows.Forms.DockStyle.Fill;
             this._layout.Location = new System.Drawing.Point(0, 0);
+            this._layout.Margin = new System.Windows.Forms.Padding(2);
             this._layout.Name = "_layout";
             this._layout.RowCount = 2;
             this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this._layout.Size = new System.Drawing.Size(178, 84);
-            this._layout.TabIndex = 0;
+            this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 12F));
+            this._layout.Size = new System.Drawing.Size(125, 50);
+            this._layout.TabIndex = 4;
             // 
             // _ok
             // 
             this._layout.SetColumnSpan(this._ok, 2);
             this._ok.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._ok.Location = new System.Drawing.Point(62, 45);
+            this._ok.Location = new System.Drawing.Point(43, 27);
+            this._ok.Margin = new System.Windows.Forms.Padding(2);
             this._ok.Name = "_ok";
-            this._ok.Size = new System.Drawing.Size(113, 36);
-            this._ok.TabIndex = 4;
+            this._ok.Size = new System.Drawing.Size(80, 21);
+            this._ok.TabIndex = 3;
             this._ok.Text = "Ok";
             this._ok.UseVisualStyleBackColor = true;
             // 
             // _hours
             // 
             this._hours.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._hours.Location = new System.Drawing.Point(3, 3);
+            this._hours.Location = new System.Drawing.Point(2, 2);
+            this._hours.Margin = new System.Windows.Forms.Padding(2);
             this._hours.Maximum = new decimal(new int[] {
             23,
             0,
             0,
             0});
             this._hours.Name = "_hours";
-            this._hours.Size = new System.Drawing.Size(53, 31);
-            this._hours.TabIndex = 1;
+            this._hours.Size = new System.Drawing.Size(37, 23);
+            this._hours.TabIndex = 0;
             // 
             // _minutes
             // 
             this._minutes.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._minutes.Location = new System.Drawing.Point(62, 3);
+            this._minutes.Location = new System.Drawing.Point(43, 2);
+            this._minutes.Margin = new System.Windows.Forms.Padding(2);
             this._minutes.Maximum = new decimal(new int[] {
             59,
             0,
             0,
             0});
             this._minutes.Name = "_minutes";
-            this._minutes.Size = new System.Drawing.Size(53, 31);
-            this._minutes.TabIndex = 2;
+            this._minutes.Size = new System.Drawing.Size(37, 23);
+            this._minutes.TabIndex = 1;
             // 
             // _seconds
             // 
             this._seconds.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._seconds.Location = new System.Drawing.Point(121, 3);
+            this._seconds.Location = new System.Drawing.Point(84, 2);
+            this._seconds.Margin = new System.Windows.Forms.Padding(2);
             this._seconds.Maximum = new decimal(new int[] {
             59,
             0,
             0,
             0});
             this._seconds.Name = "_seconds";
-            this._seconds.Size = new System.Drawing.Size(54, 31);
-            this._seconds.TabIndex = 3;
+            this._seconds.Size = new System.Drawing.Size(39, 23);
+            this._seconds.TabIndex = 2;
             // 
             // TimerDialog
             // 
             this.AcceptButton = this._ok;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(178, 84);
+            this.ClientSize = new System.Drawing.Size(125, 50);
             this.Controls.Add(this._layout);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "TimerDialog";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Timer";
             this.TopMost = true;
             this._layout.ResumeLayout(false);

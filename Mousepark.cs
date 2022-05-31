@@ -2,25 +2,17 @@ namespace Mousetrap
 {
     public partial class Mousepark : Form
     {
-        private readonly Color _backColor = Color.LightGray;
-        private readonly Color _backColorAlwaysOn = Color.Beige;
-        private readonly Color _backColorShow = Color.GreenYellow;
-        private readonly double _opacityAlwaysOn = 0.4;
-        private readonly double _opacityShow = 0.6;
-        private readonly double _opacityStart = 1;
-        private readonly double _opacityStop = 0.1;
+        private readonly AwakeHandler _handler;
         private readonly uint _showMsg;
-        private bool _alwaysAwakeModeOn = false;
+        private MouseparkAction _action;
         private CancellationTokenSource? _cancellationTokenSource;
-        private bool _isInAction = false;
-        private bool _isMovingForm = false;
         private Point _lastPosition;
 
         internal Mousepark(uint showMsg)
         {
-            _showMsg = showMsg;
             InitializeComponent();
-            TryEndAwakeState();
+            _handler = new AwakeHandler();
+            _showMsg = showMsg;
             SetPosition(ParkPosition.UpperRight);
             KeyUp += MainKeyUp;
             MouseClick += MainMouseClick;
@@ -30,6 +22,16 @@ namespace Mousetrap
             MouseLeave += MainMouseLeave;
             MouseMove += MainMouseMove;
             MouseUp += MainMouseUp;
+            _handler.OnUpdate += OnUpdate;
+            _handler.Stop();
+        }
+
+        public override void Refresh()
+        {
+            base.Refresh();
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            _handler.Refresh();
         }
 
         protected override void WndProc(ref Message m)
@@ -44,20 +46,6 @@ namespace Mousetrap
             _cancellationTokenSource.Cancel(false);
             _cancellationTokenSource.Dispose();
             _cancellationTokenSource = null;
-        }
-
-        private void EndAlwaysAwakeState()
-        {
-            _alwaysAwakeModeOn = false;
-            EndAwakeState();
-            SetDefaultPresentation();
-        }
-
-        private void EndAwakeState()
-        {
-            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStop;
-            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
         }
 
         private async Task ExecuteTimer(TimeSpan period, Action action)
@@ -85,7 +73,8 @@ namespace Mousetrap
 
         private void Exit()
         {
-            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            _handler.StopLocked();
+            DoCancellation();
             Application.Exit();
         }
 
@@ -126,13 +115,36 @@ namespace Mousetrap
             TopMost = false;
         }
 
-        private bool IsCursorHovering()
+        private void InitAlwaysOn()
         {
-            if (Cursor.Position.X > _lastPosition.X + (Size.Width / 2)) return false;
-            if (Cursor.Position.X < _lastPosition.X - (Size.Width / 2)) return false;
-            if (Cursor.Position.Y > _lastPosition.Y + (Size.Height / 2)) return false;
-            if (Cursor.Position.Y < _lastPosition.Y - (Size.Height / 2)) return false;
-            return true;
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = 0.4;
+            BackColor = Color.Beige;
+        }
+
+        private void InitOff()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = 0.1;
+            BackColor = Color.LightGray;
+        }
+
+        private void InitOn()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = 1;
+            BackColor = Color.LightGray;
+        }
+
+        private void InitShow()
+        {
+            WindowState = FormWindowState.Normal;
+            TopMost = true;
+            Opacity = 0.6;
+            BackColor = Color.GreenYellow;
         }
 
         private bool IsSamePosition(Point first, Point second, int accuracyX = 10, int accuracyY = 10)
@@ -144,8 +156,8 @@ namespace Mousetrap
 
         private async void MainKeyUp(object? sender, KeyEventArgs e)
         {
-            if (_isInAction == false) return;
-            _isInAction = false;
+            if (_action != MouseparkAction.Start) return;
+            _action = MouseparkAction.None;
 
             switch (e.KeyCode)
             {
@@ -194,7 +206,7 @@ namespace Mousetrap
                     break;
 
                 case Keys.E:
-                    EndAlwaysAwakeState();
+                    _handler.StopLocked();
                     break;
 
                 case Keys.H:
@@ -202,7 +214,7 @@ namespace Mousetrap
                     break;
 
                 case Keys.M:
-                    _isMovingForm = true;
+                    _action = MouseparkAction.Move;
                     break;
 
                 case Keys.Q:
@@ -210,7 +222,7 @@ namespace Mousetrap
                     break;
 
                 case Keys.S:
-                    StartAlwaysAwakeState();
+                    _handler.StartLocked();
                     break;
 
                 case Keys.T:
@@ -221,7 +233,7 @@ namespace Mousetrap
 
         private void MainMouseClick(object? sender, MouseEventArgs e)
         {
-            StartAction();
+            _action = MouseparkAction.Start;
         }
 
         private void MainMouseDoubleClick(object? sender, MouseEventArgs e)
@@ -235,12 +247,12 @@ namespace Mousetrap
 
         private void MainMouseHover(object? sender, EventArgs e)
         {
-            StartAwakeState();
+            _handler.Start();
         }
 
         private void MainMouseLeave(object? sender, EventArgs e)
         {
-            TryEndAwakeState();
+            _handler.Stop();
         }
 
         private void MainMouseMove(object? sender, MouseEventArgs e)
@@ -254,17 +266,15 @@ namespace Mousetrap
 
         private void MoveForm()
         {
-            if (_isMovingForm == false) return;
+            if (_action != MouseparkAction.Move) return;
             SetPosition(Cursor.Position);
         }
 
-        private void SetDefaultPresentation()
+        private void OnUpdate(object? sender, AwakeEventArgs e)
         {
-            WindowState = FormWindowState.Normal;
-            TopMost = true;
-            double defaultOpacity = IsCursorHovering() ? _opacityStart : _opacityStop;
-            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : defaultOpacity;
-            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
+            if (e.IsLocked == true && e.IsAwakeState == true) InitAlwaysOn();
+            if (e.IsLocked == false && e.IsAwakeState == true) InitOn();
+            if (e.IsLocked == false && e.IsAwakeState == false) InitOff();
         }
 
         private void SetPosition(ParkPosition position)
@@ -331,46 +341,27 @@ namespace Mousetrap
 
         private async Task ShowApplicationAsync()
         {
-            WindowState = FormWindowState.Normal;
-            TopMost = true;
-            Opacity = _opacityShow;
-            BackColor = _backColorShow;
+            InitShow();
             TimeSpan time = TimeSpan.FromSeconds(2);
-            await ExecuteTimer(time, SetDefaultPresentation);
-        }
-
-        private void StartAction()
-        {
-            _isInAction = true;
-            _isMovingForm = false;
-        }
-
-        private void StartAlwaysAwakeState()
-        {
-            _alwaysAwakeModeOn = true;
-            StartAwakeState();
-        }
-
-        private void StartAwakeState()
-        {
-            InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
-            Opacity = _alwaysAwakeModeOn ? _opacityAlwaysOn : _opacityStart;
-            BackColor = _alwaysAwakeModeOn ? _backColorAlwaysOn : _backColor;
+            await ExecuteTimer(time, Refresh);
         }
 
         private async Task StartTimer()
         {
-            TimeSpan time = GetTimerValue();
-            if (time == TimeSpan.Zero) return;
-            StartAlwaysAwakeState();
-            await ExecuteTimer(time, EndAlwaysAwakeState);
-        }
-
-        private bool TryEndAwakeState()
-        {
-            if (_alwaysAwakeModeOn == true) return false;
-            EndAwakeState();
-            return true;
+            try
+            {
+                TimeSpan period = GetTimerValue();
+                if (period == TimeSpan.Zero) return;
+                CancellationToken cancellationToken = GetCancellationToken();
+                await _handler.StartLocked(period, cancellationToken);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                DoCancellation();
+            }
         }
     }
 }
