@@ -2,11 +2,22 @@
 {
     public delegate void AwakeEventHandler(object? sender, AwakeEventArgs e);
 
+    public delegate void AwakePingHandler(object? sender, AwakeEventArgs e);
+
     public sealed class AwakeHandler
     {
+        private readonly SemaphoreSlim _semaphore;
+
         private bool _isAwakeState;
 
         private bool _isLocked;
+
+        public AwakeHandler()
+        {
+            _semaphore = new SemaphoreSlim(0);
+        }
+
+        public event AwakePingHandler? OnPing;
 
         public event AwakeEventHandler? OnUpdate;
 
@@ -31,19 +42,13 @@
             return SetStart(false, false);
         }
 
-        public async Task Start(TimeSpan period, CancellationToken cancellationToken = default)
+        public async Task Start(TimeSpan period, CancellationToken cancellationToken)
         {
-            try
-            {
-                Start();
-                CallOnUpdate(period);
-                using PeriodicTimer timer = new PeriodicTimer(period);
-                await timer.WaitForNextTickAsync(cancellationToken);
-                Stop();
-            }
-            catch
-            {
-            }
+            Start();
+            CallOnUpdate(period);
+            using PeriodicTimer timer = new PeriodicTimer(period);
+            await timer.WaitForNextTickAsync(cancellationToken);
+            Stop();
         }
 
         public void StartLocked()
@@ -51,19 +56,13 @@
             SetStart(true, true);
         }
 
-        public async Task StartLocked(TimeSpan period, CancellationToken cancellationToken = default)
+        public async Task StartLocked(TimeSpan period, CancellationToken cancellationToken)
         {
-            try
-            {
-                StartLocked();
-                CallOnUpdate(period);
-                using PeriodicTimer timer = new PeriodicTimer(period);
-                await timer.WaitForNextTickAsync(cancellationToken);
-                StopLocked();
-            }
-            catch
-            {
-            }
+            StartLocked();
+            CallOnUpdate(period);
+            using PeriodicTimer timer = new PeriodicTimer(period);
+            await timer.WaitForNextTickAsync(cancellationToken);
+            StopLocked();
         }
 
         public bool Stop()
@@ -85,6 +84,18 @@
         {
             if (OnUpdate == null) return;
             OnUpdate(this, new AwakeEventArgs(IsAwakeState, IsLocked, period));
+        }
+
+        private async Task Ping(TimeSpan period, CancellationToken cancellationToken)
+        {
+            if (OnPing == null || _isAwakeState == false) return;
+            using PeriodicTimer timer = new PeriodicTimer(period);
+            while (_isAwakeState)
+            {
+                await timer.WaitForNextTickAsync(cancellationToken);
+                if (_isAwakeState == false) break;
+                OnPing(this, new AwakeEventArgs(IsAwakeState, IsLocked, period));
+            }
         }
 
         private bool SetStart(bool lockValue, bool forceUpdate)

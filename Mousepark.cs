@@ -2,14 +2,16 @@ namespace Mousetrap
 {
     public partial class Mousepark : Form
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly AwakeHandler _handler;
         private readonly uint _showMsg;
         private MouseparkAction _action;
-        private CancellationTokenSource? _cancellationTokenSource;
-        private Point _lastPosition;
+        private Point _applicationPosition;
+        private Point _lastCursorPosition;
 
         internal Mousepark(uint showMsg)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
             InitializeComponent();
             _handler = new AwakeHandler();
             _showMsg = showMsg;
@@ -40,49 +42,11 @@ namespace Mousetrap
             base.WndProc(ref m);
         }
 
-        private void DoCancellation()
-        {
-            if (_cancellationTokenSource == null) return;
-            _cancellationTokenSource.Cancel(false);
-            _cancellationTokenSource.Dispose();
-            _cancellationTokenSource = null;
-        }
-
-        private async Task ExecuteTimer(TimeSpan period, Action action)
-        {
-            await ExecuteTimer(period);
-            action();
-        }
-
-        private async Task ExecuteTimer(TimeSpan period)
-        {
-            try
-            {
-                CancellationToken cancellationToken = GetCancellationToken();
-                using PeriodicTimer? timer = new PeriodicTimer(period);
-                await timer.WaitForNextTickAsync(cancellationToken);
-            }
-            catch
-            {
-            }
-            finally
-            {
-                DoCancellation();
-            }
-        }
-
         private void Exit()
         {
             _handler.StopLocked();
-            DoCancellation();
             Application.Exit();
-        }
-
-        private CancellationToken GetCancellationToken()
-        {
-            if (_cancellationTokenSource != null) return _cancellationTokenSource.Token;
-            _cancellationTokenSource = new CancellationTokenSource();
-            return _cancellationTokenSource.Token;
+            _cancellationTokenSource.Cancel(false);
         }
 
         private Point GetNewPosition(Point curentPosition)
@@ -201,10 +165,6 @@ namespace Mousetrap
                     await ShowApplicationAsync();
                     break;
 
-                case Keys.C:
-                    DoCancellation();
-                    break;
-
                 case Keys.E:
                     _handler.StopLocked();
                     break;
@@ -272,6 +232,7 @@ namespace Mousetrap
 
         private void OnUpdate(object? sender, AwakeEventArgs e)
         {
+            _lastCursorPosition = Cursor.Position;
             if (e.IsLocked == true && e.IsAwakeState == true) InitAlwaysOn();
             if (e.IsLocked == false && e.IsAwakeState == true) InitOn();
             if (e.IsLocked == false && e.IsAwakeState == false) InitOff();
@@ -326,11 +287,11 @@ namespace Mousetrap
 
         private void SetPosition(Point position)
         {
-            Point lastPosition = _lastPosition;
+            Point lastPosition = _applicationPosition;
             Point newPosition = GetNewPosition(position);
             if (IsSamePosition(newPosition, lastPosition)) newPosition = lastPosition;
             Location = newPosition;
-            _lastPosition = newPosition;
+            _applicationPosition = newPosition;
         }
 
         private void ShowApplication()
@@ -342,26 +303,17 @@ namespace Mousetrap
         private async Task ShowApplicationAsync()
         {
             InitShow();
-            TimeSpan time = TimeSpan.FromSeconds(2);
-            await ExecuteTimer(time, Refresh);
+            TimeSpan period = TimeSpan.FromSeconds(2);
+            using PeriodicTimer timer = new PeriodicTimer(period);
+            await timer.WaitForNextTickAsync(_cancellationTokenSource.Token);
+            Refresh();
         }
 
         private async Task StartTimer()
         {
-            try
-            {
-                TimeSpan period = GetTimerValue();
-                if (period == TimeSpan.Zero) return;
-                CancellationToken cancellationToken = GetCancellationToken();
-                await _handler.StartLocked(period, cancellationToken);
-            }
-            catch
-            {
-            }
-            finally
-            {
-                DoCancellation();
-            }
+            TimeSpan period = GetTimerValue();
+            if (period == TimeSpan.Zero) return;
+            await _handler.StartLocked(period, _cancellationTokenSource.Token);
         }
     }
 }
