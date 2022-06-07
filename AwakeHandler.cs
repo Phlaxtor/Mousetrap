@@ -4,16 +4,16 @@
 
     public delegate void AwakePingHandler(object? sender, AwakeEventArgs e);
 
-    public sealed class AwakeHandler
+    public sealed class AwakeHandler : IDisposable
     {
+        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly SemaphoreSlim _semaphore;
-
         private bool _isAwakeState;
-
         private bool _isLocked;
 
         public AwakeHandler()
         {
+            _cancellationTokenSource = new CancellationTokenSource();
             _semaphore = new SemaphoreSlim(0);
         }
 
@@ -26,6 +26,12 @@
         public bool IsLocked => _isLocked;
 
         public bool IsLockedAwake => _isLocked && _isAwakeState;
+
+        public void Dispose()
+        {
+            _cancellationTokenSource.Cancel(false);
+            _cancellationTokenSource.Dispose();
+        }
 
         public void Lock()
         {
@@ -116,6 +122,26 @@
             InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
             CallOnUpdate();
             return true;
+        }
+
+        private void StartPing(CancellationToken cancellationToken)
+        {
+            var ping = StartPingAsync(cancellationToken);
+            ping.Start();
+        }
+
+        private async Task StartPingAsync(CancellationToken cancellationToken)
+        {
+            if (OnPing == null || _isAwakeState == false) return;
+            if (await _semaphore.WaitAsync(TimeSpan.Zero, cancellationToken) == false) return;
+            try
+            {
+                await Ping(TimeSpan.FromMinutes(1), cancellationToken);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
     }
 }

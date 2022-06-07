@@ -17,6 +17,7 @@
             {
                 _cancellationTokenSource.Dispose();
                 components?.Dispose();
+                _handler.Dispose();
             }
 
             base.Dispose(disposing);
