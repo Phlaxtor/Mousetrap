@@ -14,7 +14,7 @@
         public AwakeHandler()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            _semaphore = new SemaphoreSlim(0);
+            _semaphore = new SemaphoreSlim(1);
         }
 
         public event AwakePingHandler? OnPing;
@@ -51,7 +51,6 @@
         public async Task Start(TimeSpan period, CancellationToken cancellationToken)
         {
             Start();
-            CallOnUpdate(period);
             using PeriodicTimer timer = new PeriodicTimer(period);
             await timer.WaitForNextTickAsync(cancellationToken);
             Stop();
@@ -65,7 +64,6 @@
         public async Task StartLocked(TimeSpan period, CancellationToken cancellationToken)
         {
             StartLocked();
-            CallOnUpdate(period);
             using PeriodicTimer timer = new PeriodicTimer(period);
             await timer.WaitForNextTickAsync(cancellationToken);
             StopLocked();
@@ -86,10 +84,10 @@
             _isLocked = false;
         }
 
-        private void CallOnUpdate(TimeSpan period = default)
+        private void CallOnUpdate()
         {
             if (OnUpdate == null) return;
-            OnUpdate(this, new AwakeEventArgs(IsAwakeState, IsLocked, period));
+            OnUpdate(this, new AwakeEventArgs(IsAwakeState, IsLocked));
         }
 
         private async Task Ping(TimeSpan period, CancellationToken cancellationToken)
@@ -100,7 +98,7 @@
             {
                 await timer.WaitForNextTickAsync(cancellationToken);
                 if (_isAwakeState == false) break;
-                OnPing(this, new AwakeEventArgs(IsAwakeState, IsLocked, period));
+                OnPing(this, new AwakeEventArgs(IsAwakeState, IsLocked));
             }
         }
 
@@ -111,6 +109,7 @@
             _isAwakeState = true;
             InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
             CallOnUpdate();
+            Task.Run(StartPingAsync, _cancellationTokenSource.Token);
             return true;
         }
 
@@ -124,19 +123,13 @@
             return true;
         }
 
-        private void StartPing(CancellationToken cancellationToken)
-        {
-            var ping = StartPingAsync(cancellationToken);
-            ping.Start();
-        }
-
-        private async Task StartPingAsync(CancellationToken cancellationToken)
+        private async Task StartPingAsync()
         {
             if (OnPing == null || _isAwakeState == false) return;
-            if (await _semaphore.WaitAsync(TimeSpan.Zero, cancellationToken) == false) return;
+            if (await _semaphore.WaitAsync(TimeSpan.Zero, _cancellationTokenSource.Token) == false) return;
             try
             {
-                await Ping(TimeSpan.FromMinutes(1), cancellationToken);
+                await Ping(TimeSpan.FromMinutes(10), _cancellationTokenSource.Token);
             }
             finally
             {

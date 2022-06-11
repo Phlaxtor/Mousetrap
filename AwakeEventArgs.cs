@@ -2,17 +2,14 @@
 {
     public class AwakeEventArgs : EventArgs
     {
-        public AwakeEventArgs(bool isAwakeState, bool isLocked, TimeSpan period = default)
+        public AwakeEventArgs(bool isAwakeState, bool isLocked)
         {
             IsAwakeState = isAwakeState;
             IsLocked = isLocked;
-            Period = period;
         }
 
         public bool IsAwakeState { get; }
 
         public bool IsLocked { get; }
-
-        public TimeSpan Period { get; }
     }
 }
