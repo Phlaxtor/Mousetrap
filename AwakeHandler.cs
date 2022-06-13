@@ -129,7 +129,7 @@
             if (await _semaphore.WaitAsync(TimeSpan.Zero, _cancellationTokenSource.Token) == false) return;
             try
             {
-                await Ping(TimeSpan.FromMinutes(10), _cancellationTokenSource.Token);
+                await Ping(TimeSpan.FromMinutes(1), _cancellationTokenSource.Token);
             }
             finally
             {

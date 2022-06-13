@@ -1,6 +1,3 @@
-using System.Net;
-using System.Net.NetworkInformation;
-
 namespace Mousetrap
 {
     public partial class Mousepark : Form
@@ -234,11 +231,9 @@ namespace Mousetrap
             SetPosition(Cursor.Position);
         }
 
-        private async void OnPing(object? sender, AwakeEventArgs e)
+        private void OnPing(object? sender, AwakeEventArgs e)
         {
-            using var ping = new Ping();
-            var host = Dns.GetHostName();
-            await ping.SendPingAsync(host, 100);
+            InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
         }
 
         private void OnUpdate(object? sender, AwakeEventArgs e)
