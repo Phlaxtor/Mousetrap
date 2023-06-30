@@ -233,7 +233,6 @@ namespace Mousetrap
 
         private void OnPing(object? sender, AwakeEventArgs e)
         {
-            InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
         }
 
         private void OnUpdate(object? sender, AwakeEventArgs e)

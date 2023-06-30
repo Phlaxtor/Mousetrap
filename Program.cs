@@ -3,7 +3,7 @@ namespace Mousetrap
     internal static class Program
     {
         private static readonly Mutex _mutex = new Mutex(true, @"Global\Mousepark.Unique");
-        private static readonly uint _showMsg = InteropFunctions.RegisterWindowMessage("WM_SHOWAPPLICATION");
+        private static readonly uint _showMsg = InteropFunctions.RegisterWindowMessage(InteropFunctions.WM_SHOWAPPLICATION);
 
         [STAThread]
         private static void Main()
