@@ -4,15 +4,19 @@ namespace Mousetrap
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly AwakeHandler _handler;
+        private readonly Info _info;
         private readonly uint _showMsg;
         private MouseparkAction _action;
         private Point _applicationPosition;
         private Point _lastCursorPosition;
+        private TimeSpan _lastStart;
+        private TimeSpan _lastStop;
 
         internal Mousepark(uint showMsg)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             InitializeComponent();
+            _info = new Info();
             _handler = new AwakeHandler();
             _showMsg = showMsg;
             SetPosition(ParkPosition.UpperRight);
@@ -189,6 +193,10 @@ namespace Mousetrap
                 case Keys.T:
                     await StartTimer();
                     break;
+
+                case Keys.I:
+                    ShowMessage();
+                    break;
             }
         }
 
@@ -208,11 +216,13 @@ namespace Mousetrap
 
         private void MainMouseHover(object? sender, EventArgs e)
         {
+            _lastStart = DateTime.Now.TimeOfDay;
             _handler.Start();
         }
 
         private void MainMouseLeave(object? sender, EventArgs e)
         {
+            _lastStop = DateTime.Now.TimeOfDay;
             _handler.Stop();
         }
 
@@ -241,6 +251,11 @@ namespace Mousetrap
             if (e.IsLocked == true && e.IsAwakeState == true) InitAlwaysOn();
             if (e.IsLocked == false && e.IsAwakeState == true) InitOn();
             if (e.IsLocked == false && e.IsAwakeState == false) InitOff();
+        }
+
+        private void SetMessage(string message)
+        {
+            _info.SetMessage(message);
         }
 
         private void SetPosition(ParkPosition position)
@@ -312,6 +327,11 @@ namespace Mousetrap
             using PeriodicTimer timer = new PeriodicTimer(period);
             await timer.WaitForNextTickAsync(_cancellationTokenSource.Token);
             Refresh();
+        }
+
+        private void ShowMessage()
+        {
+            SetMessage($"Start: {_lastStart}{Environment.NewLine}Stop: {_lastStop}");
         }
 
         private async Task StartTimer()

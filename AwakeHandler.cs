@@ -84,6 +84,12 @@
             _isLocked = false;
         }
 
+        private void CallOnPing()
+        {
+            if (OnPing == null) return;
+            OnPing(this, new AwakeEventArgs(IsAwakeState, IsLocked));
+        }
+
         private void CallOnUpdate()
         {
             if (OnUpdate == null) return;
@@ -92,13 +98,28 @@
 
         private async Task Ping(TimeSpan period, CancellationToken cancellationToken)
         {
-            if (OnPing == null || _isAwakeState == false) return;
             using PeriodicTimer timer = new PeriodicTimer(period);
             while (_isAwakeState)
             {
                 await timer.WaitForNextTickAsync(cancellationToken);
                 if (_isAwakeState == false) break;
-                OnPing(this, new AwakeEventArgs(IsAwakeState, IsLocked));
+                CallOnPing();
+                CallOnUpdate();
+                RefreshState();
+            }
+        }
+
+        private void RefreshState()
+        {
+            if (_isAwakeState)
+            {
+                SetStateContinuous();
+                SetStateAlwaysAwake();
+            }
+            else
+            {
+                SetStateAlwaysAwake();
+                SetStateContinuous();
             }
         }
 
@@ -107,10 +128,20 @@
             if (_isLocked == true && forceUpdate == false) return false;
             _isLocked = lockValue;
             _isAwakeState = true;
-            InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
+            SetStateAlwaysAwake();
             CallOnUpdate();
             Task.Run(StartPingAsync, _cancellationTokenSource.Token);
             return true;
+        }
+
+        private void SetStateAlwaysAwake()
+        {
+            EXECUTION_STATE value = InteropFunctions.SetThreadExecutionState(InteropFunctions.ES_ALWAYS_AWAKE);
+        }
+
+        private void SetStateContinuous()
+        {
+            EXECUTION_STATE value = InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
         }
 
         private bool SetStop(bool lockValue, bool forceUpdate)
@@ -118,14 +149,14 @@
             if (_isLocked == true && forceUpdate == false) return false;
             _isLocked = lockValue;
             _isAwakeState = false;
-            InteropFunctions.SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            SetStateContinuous();
             CallOnUpdate();
             return true;
         }
 
         private async Task StartPingAsync()
         {
-            if (OnPing == null || _isAwakeState == false) return;
+            if (_isAwakeState == false) return;
             if (await _semaphore.WaitAsync(TimeSpan.Zero, _cancellationTokenSource.Token) == false) return;
             try
             {

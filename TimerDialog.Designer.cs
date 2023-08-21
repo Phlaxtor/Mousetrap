@@ -28,116 +28,103 @@ partial class TimerDialog
     /// </summary>
     private void InitializeComponent()
     {
-            this._layout = new System.Windows.Forms.TableLayoutPanel();
-            this._ok = new System.Windows.Forms.Button();
-            this._hours = new System.Windows.Forms.NumericUpDown();
-            this._minutes = new System.Windows.Forms.NumericUpDown();
-            this._seconds = new System.Windows.Forms.NumericUpDown();
-            this._layout.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this._hours)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this._minutes)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this._seconds)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // _layout
-            // 
-            this._layout.ColumnCount = 3;
-            this._layout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._layout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._layout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._layout.Controls.Add(this._ok, 1, 1);
-            this._layout.Controls.Add(this._hours, 0, 0);
-            this._layout.Controls.Add(this._minutes, 1, 0);
-            this._layout.Controls.Add(this._seconds, 2, 0);
-            this._layout.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._layout.Location = new System.Drawing.Point(0, 0);
-            this._layout.Margin = new System.Windows.Forms.Padding(2);
-            this._layout.Name = "_layout";
-            this._layout.RowCount = 2;
-            this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 12F));
-            this._layout.Size = new System.Drawing.Size(125, 50);
-            this._layout.TabIndex = 4;
-            // 
-            // _ok
-            // 
-            this._layout.SetColumnSpan(this._ok, 2);
-            this._ok.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._ok.Location = new System.Drawing.Point(43, 27);
-            this._ok.Margin = new System.Windows.Forms.Padding(2);
-            this._ok.Name = "_ok";
-            this._ok.Size = new System.Drawing.Size(80, 21);
-            this._ok.TabIndex = 3;
-            this._ok.Text = "Ok";
-            this._ok.UseVisualStyleBackColor = true;
-            // 
-            // _hours
-            // 
-            this._hours.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._hours.Location = new System.Drawing.Point(2, 2);
-            this._hours.Margin = new System.Windows.Forms.Padding(2);
-            this._hours.Maximum = new decimal(new int[] {
-            23,
-            0,
-            0,
-            0});
-            this._hours.Name = "_hours";
-            this._hours.Size = new System.Drawing.Size(37, 23);
-            this._hours.TabIndex = 0;
-            // 
-            // _minutes
-            // 
-            this._minutes.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._minutes.Location = new System.Drawing.Point(43, 2);
-            this._minutes.Margin = new System.Windows.Forms.Padding(2);
-            this._minutes.Maximum = new decimal(new int[] {
-            59,
-            0,
-            0,
-            0});
-            this._minutes.Name = "_minutes";
-            this._minutes.Size = new System.Drawing.Size(37, 23);
-            this._minutes.TabIndex = 1;
-            // 
-            // _seconds
-            // 
-            this._seconds.Dock = System.Windows.Forms.DockStyle.Fill;
-            this._seconds.Location = new System.Drawing.Point(84, 2);
-            this._seconds.Margin = new System.Windows.Forms.Padding(2);
-            this._seconds.Maximum = new decimal(new int[] {
-            59,
-            0,
-            0,
-            0});
-            this._seconds.Name = "_seconds";
-            this._seconds.Size = new System.Drawing.Size(39, 23);
-            this._seconds.TabIndex = 2;
-            // 
-            // TimerDialog
-            // 
-            this.AcceptButton = this._ok;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(125, 50);
-            this.Controls.Add(this._layout);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            this.Margin = new System.Windows.Forms.Padding(2);
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "TimerDialog";
-            this.ShowIcon = false;
-            this.ShowInTaskbar = false;
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Timer";
-            this.TopMost = true;
-            this._layout.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this._hours)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this._minutes)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this._seconds)).EndInit();
-            this.ResumeLayout(false);
-
+        _layout = new TableLayoutPanel();
+        _ok = new Button();
+        _hours = new NumericUpDown();
+        _minutes = new NumericUpDown();
+        _seconds = new NumericUpDown();
+        _layout.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)_hours).BeginInit();
+        ((System.ComponentModel.ISupportInitialize)_minutes).BeginInit();
+        ((System.ComponentModel.ISupportInitialize)_seconds).BeginInit();
+        SuspendLayout();
+        // 
+        // _layout
+        // 
+        _layout.ColumnCount = 3;
+        _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33333F));
+        _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33333F));
+        _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33333F));
+        _layout.Controls.Add(_ok, 1, 1);
+        _layout.Controls.Add(_hours, 0, 0);
+        _layout.Controls.Add(_minutes, 1, 0);
+        _layout.Controls.Add(_seconds, 2, 0);
+        _layout.Dock = DockStyle.Fill;
+        _layout.Location = new Point(0, 0);
+        _layout.Margin = new Padding(2);
+        _layout.Name = "_layout";
+        _layout.RowCount = 2;
+        _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 12F));
+        _layout.Size = new Size(125, 50);
+        _layout.TabIndex = 4;
+        // 
+        // _ok
+        // 
+        _layout.SetColumnSpan(_ok, 2);
+        _ok.Dock = DockStyle.Fill;
+        _ok.Location = new Point(43, 27);
+        _ok.Margin = new Padding(2);
+        _ok.Name = "_ok";
+        _ok.Size = new Size(80, 21);
+        _ok.TabIndex = 3;
+        _ok.Text = "Ok";
+        _ok.UseVisualStyleBackColor = true;
+        // 
+        // _hours
+        // 
+        _hours.Dock = DockStyle.Fill;
+        _hours.Location = new Point(2, 2);
+        _hours.Margin = new Padding(2);
+        _hours.Maximum = new decimal(new int[] { 23, 0, 0, 0 });
+        _hours.Name = "_hours";
+        _hours.Size = new Size(37, 23);
+        _hours.TabIndex = 0;
+        // 
+        // _minutes
+        // 
+        _minutes.Dock = DockStyle.Fill;
+        _minutes.Location = new Point(43, 2);
+        _minutes.Margin = new Padding(2);
+        _minutes.Maximum = new decimal(new int[] { 59, 0, 0, 0 });
+        _minutes.Name = "_minutes";
+        _minutes.Size = new Size(37, 23);
+        _minutes.TabIndex = 1;
+        // 
+        // _seconds
+        // 
+        _seconds.Dock = DockStyle.Fill;
+        _seconds.Location = new Point(84, 2);
+        _seconds.Margin = new Padding(2);
+        _seconds.Maximum = new decimal(new int[] { 59, 0, 0, 0 });
+        _seconds.Name = "_seconds";
+        _seconds.Size = new Size(39, 23);
+        _seconds.TabIndex = 2;
+        // 
+        // TimerDialog
+        // 
+        AcceptButton = _ok;
+        AutoScaleDimensions = new SizeF(7F, 15F);
+        AutoScaleMode = AutoScaleMode.Font;
+        ClientSize = new Size(125, 50);
+        Controls.Add(_layout);
+        FormBorderStyle = FormBorderStyle.FixedToolWindow;
+        Margin = new Padding(2);
+        MaximizeBox = false;
+        MinimizeBox = false;
+        Name = "TimerDialog";
+        ShowIcon = false;
+        ShowInTaskbar = false;
+        SizeGripStyle = SizeGripStyle.Hide;
+        StartPosition = FormStartPosition.CenterScreen;
+        Text = "Timer";
+        TopMost = true;
+        _layout.ResumeLayout(false);
+        ((System.ComponentModel.ISupportInitialize)_hours).EndInit();
+        ((System.ComponentModel.ISupportInitialize)_minutes).EndInit();
+        ((System.ComponentModel.ISupportInitialize)_seconds).EndInit();
+        ResumeLayout(false);
     }
 
     #endregion
